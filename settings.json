@@ -1,0 +1,9 @@
+{
+    "name": "FastFloward_Dapp",
+    "blocks": {
+        "/blockchain/flow": true,
+        "/blockchain/flow/cadence": true,
+        "/framework/vanilla": true,
+        "/category/foundation/core-fast_floward": true
+    }
+}
