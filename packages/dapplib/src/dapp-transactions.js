@@ -113,6 +113,99 @@ module.exports = class DappTransactions {
 		`;
 	}
 
+	static kittyitems_mint_kitty_item() {
+		return fcl.transaction`
+				// TODO: 
+				// Add imports here, then do steps 1, 2, and 3.
+				
+				// This transction uses the NFTMinter resource to mint a new NFT.
+				//
+				// It must be signed by the account that has the minter resource
+				// stored at path 'KittyItems.MinterStoragePath'.
+				
+				transaction(recipient: Address, typeID: UInt64) {
+				    
+				    // local variable for storing the minter reference
+				    let minter: &KittyItems.NFTMinter
+				    // local variable for a reference to the recipient's Kitty Items Collection
+				    let receiver: &{NonFungibleToken.CollectionPublic}
+				
+				    prepare(signer: AuthAccount) {
+				
+				        // 1) borrow a reference to the NFTMinter resource in the signer's storage
+				        
+				        // 2) borrow a public reference to the recipient's Kitty Items Collection
+				        
+				    }
+				
+				    execute {
+				
+				        // 3) mint the NFT and deposit it into the recipient's Collection
+				        
+				    }
+				}
+		`;
+	}
+
+	static kittyitems_setup_account() {
+		return fcl.transaction`
+				import NonFungibleToken from 0x01cf0e2f2f715450
+				import KittyItems from 0x01cf0e2f2f715450
+				
+				// This transaction configures an account to hold Kitty Items.
+				
+				transaction {
+				    prepare(signer: AuthAccount) {
+				        // if the account doesn't already have a collection
+				        if signer.borrow<&KittyItems.Collection>(from: KittyItems.CollectionStoragePath) == nil {
+				
+				            // create a new empty collection
+				            let collection <- KittyItems.createEmptyCollection()
+				            
+				            // save it to the account
+				            signer.save(<-collection, to: KittyItems.CollectionStoragePath)
+				
+				            // create a public capability for the collection
+				            signer.link<&KittyItems.Collection{NonFungibleToken.CollectionPublic, KittyItems.KittyItemsCollectionPublic}>(KittyItems.CollectionPublicPath, target: KittyItems.CollectionStoragePath)
+				        }
+				    }
+				}
+		`;
+	}
+
+	static kittyitems_transfer_kitty_item() {
+		return fcl.transaction`
+				// TODO:
+				// Add imports here, then do steps 1, 2, 3, and 4.
+				
+				// This transaction transfers a Kitty Item from one account to another.
+				
+				transaction(recipient: Address, withdrawID: UInt64) {
+				    // local variable for a reference to the signer's Kitty Items Collection
+				    let signerCollectionRef: &KittyItems.Collection
+				
+				    // local variable for a reference to the receiver's Kitty Items Collection
+				    let receiverCollectionRef: &{NonFungibleToken.CollectionPublic}
+				
+				    prepare(signer: AuthAccount) {
+				
+				        // 1) borrow a reference to the signer's Kitty Items Collection
+				
+				        // 2) borrow a public reference to the recipient's Kitty Items Collection
+				
+				    }
+				
+				    execute {
+				
+				        // 3) withdraw the Kitty Item from the signer's Collection
+				
+				        // 4) deposit the Kitty Item into the recipient's Collection
+				       
+				    }
+				}
+		`;
+	}
+
 	static kittyitemsmarket_buy_market_item() {
 		return fcl.transaction`
 				import FungibleToken from 0xee82856bf20e2aa6
@@ -159,6 +252,34 @@ module.exports = class DappTransactions {
 				        // Purchase the Kitty Item
 				        self.saleCollection.purchase(itemID: itemID, recipient: self.buyerKittyItemsCollection, buyTokens: <-vault)
 				    }
+				}
+				
+		`;
+	}
+
+	static kittyitemsmarket_sell_market_item() {
+		return fcl.transaction`
+				import KittyItemsMarket from 0x01cf0e2f2f715450
+				
+				// This transaction allows the signer to list a Kitty Item for sale
+				// from their Kitty Items Collection
+				
+				transaction(itemID: UInt64, price: UFix64) {
+				
+				  let saleCollection: &KittyItemsMarket.SaleCollection
+				
+				  prepare(signer: AuthAccount) {
+				      // Borrows the signer's SaleCollection
+				      self.saleCollection = signer.borrow<&KittyItemsMarket.SaleCollection>(from: KittyItemsMarket.MarketStoragePath) 
+				          ?? panic("Could not borrow the SaleCollection")
+				  }
+				
+				  execute {
+				      // Lists Packs for sale
+				      self.saleCollection.listForSale(itemID: itemID, price: price)
+				
+				      log("Listed Kitty Items for sale")
+				  }
 				}
 				
 		`;
@@ -239,127 +360,6 @@ module.exports = class DappTransactions {
 				      log("Gave account a sale collection")
 				    }
 				  }
-				}
-		`;
-	}
-
-	static kittyitemsmarket_sell_market_item() {
-		return fcl.transaction`
-				import KittyItemsMarket from 0x01cf0e2f2f715450
-				
-				// This transaction allows the signer to list a Kitty Item for sale
-				// from their Kitty Items Collection
-				
-				transaction(itemID: UInt64, price: UFix64) {
-				
-				  let saleCollection: &KittyItemsMarket.SaleCollection
-				
-				  prepare(signer: AuthAccount) {
-				      // Borrows the signer's SaleCollection
-				      self.saleCollection = signer.borrow<&KittyItemsMarket.SaleCollection>(from: KittyItemsMarket.MarketStoragePath) 
-				          ?? panic("Could not borrow the SaleCollection")
-				  }
-				
-				  execute {
-				      // Lists Packs for sale
-				      self.saleCollection.listForSale(itemID: itemID, price: price)
-				
-				      log("Listed Kitty Items for sale")
-				  }
-				}
-				
-		`;
-	}
-
-	static kittyitems_mint_kitty_item() {
-		return fcl.transaction`
-				// TODO: 
-				// Add imports here, then do steps 1, 2, and 3.
-				
-				// This transction uses the NFTMinter resource to mint a new NFT.
-				//
-				// It must be signed by the account that has the minter resource
-				// stored at path 'KittyItems.MinterStoragePath'.
-				
-				transaction(recipient: Address, typeID: UInt64) {
-				    
-				    // local variable for storing the minter reference
-				    let minter: &KittyItems.NFTMinter
-				    // local variable for a reference to the recipient's Kitty Items Collection
-				    let receiver: &{NonFungibleToken.CollectionPublic}
-				
-				    prepare(signer: AuthAccount) {
-				
-				        // 1) borrow a reference to the NFTMinter resource in the signer's storage
-				        
-				        // 2) borrow a public reference to the recipient's Kitty Items Collection
-				        
-				    }
-				
-				    execute {
-				
-				        // 3) mint the NFT and deposit it into the recipient's Collection
-				        
-				    }
-				}
-		`;
-	}
-
-	static kittyitems_transfer_kitty_item() {
-		return fcl.transaction`
-				// TODO:
-				// Add imports here, then do steps 1, 2, 3, and 4.
-				
-				// This transaction transfers a Kitty Item from one account to another.
-				
-				transaction(recipient: Address, withdrawID: UInt64) {
-				    // local variable for a reference to the signer's Kitty Items Collection
-				    let signerCollectionRef: &KittyItems.Collection
-				
-				    // local variable for a reference to the receiver's Kitty Items Collection
-				    let receiverCollectionRef: &{NonFungibleToken.CollectionPublic}
-				
-				    prepare(signer: AuthAccount) {
-				
-				        // 1) borrow a reference to the signer's Kitty Items Collection
-				
-				        // 2) borrow a public reference to the recipient's Kitty Items Collection
-				
-				    }
-				
-				    execute {
-				
-				        // 3) withdraw the Kitty Item from the signer's Collection
-				
-				        // 4) deposit the Kitty Item into the recipient's Collection
-				       
-				    }
-				}
-		`;
-	}
-
-	static kittyitems_setup_account() {
-		return fcl.transaction`
-				import NonFungibleToken from 0x01cf0e2f2f715450
-				import KittyItems from 0x01cf0e2f2f715450
-				
-				// This transaction configures an account to hold Kitty Items.
-				
-				transaction {
-				    prepare(signer: AuthAccount) {
-				        // if the account doesn't already have a collection
-				        if signer.borrow<&KittyItems.Collection>(from: KittyItems.CollectionStoragePath) == nil {
-				
-				            // create a new empty collection
-				            let collection <- KittyItems.createEmptyCollection()
-				            
-				            // save it to the account
-				            signer.save(<-collection, to: KittyItems.CollectionStoragePath)
-				
-				            // create a public capability for the collection
-				            signer.link<&KittyItems.Collection{NonFungibleToken.CollectionPublic, KittyItems.KittyItemsCollectionPublic}>(KittyItems.CollectionPublicPath, target: KittyItems.CollectionStoragePath)
-				        }
-				    }
 				}
 		`;
 	}
