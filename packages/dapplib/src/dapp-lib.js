@@ -183,6 +183,7 @@ module.exports = class DappLib {
         typeID: { value: parseInt(data.typeID), type: t.UInt64 },
       }
     );
+
     return {
       type: DappLib.DAPP_RESULT_TX_HASH,
       label: "Transaction Hash",
@@ -200,12 +201,11 @@ module.exports = class DappLib {
   // 2) withdrawID
   //
   static async kittyItemsTransferKittyItem(data) {
-    let config = DappLib.getConfig();
     let result = await Blockchain.post(
       {
-        config: config,
+        config: DappLib.getConfig(),
         roles: {
-          proposer: config.accounts[0],
+          proposer: data.signer,
         },
       },
       "kittyitems_transfer_kitty_item",
@@ -214,8 +214,9 @@ module.exports = class DappLib {
         withdrawID: { value: parseInt(data.withdrawID), type: t.UInt64 },
       }
     );
+
     return {
-      type: Dapp.DAPP_RESULT_TX_HASH,
+      type: DappLib.DAPP_RESULT_TX_HASH,
       label: "Transaction Hash",
       result: result.callData.transactionId,
     };
@@ -232,10 +233,9 @@ module.exports = class DappLib {
   // Note #2: the return type should be DAPP_RESULT_ARRAY
   //
   static async kittyItemsReadCollectionIDs(data) {
-    let config = DappLib.getConfig();
-    let result = Blockchain.get(
+    let result = await Blockchain.get(
       {
-        config: config,
+        config: DappLib.getConfig(),
         roles: {},
       },
       "kittyitems_read_collection_ids",
@@ -243,6 +243,7 @@ module.exports = class DappLib {
         address: { value: data.address, type: t.Address },
       }
     );
+
     return {
       type: DappLib.DAPP_RESULT_ARRAY,
       label: "Kitty Items Collection IDs",

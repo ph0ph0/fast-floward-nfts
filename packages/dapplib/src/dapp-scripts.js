@@ -48,17 +48,41 @@ module.exports = class DappScripts {
 		return fcl.script`
 				// TODO:
 				// Add imports here, then do steps 1 and 2.
+				import NonFungibleToken from 0x01cf0e2f2f715450
+				import KittyItems from 0x01cf0e2f2f715450
 				
 				// This script returns an array of all the NFT IDs in an account's Kitty Items Collection.
 				
 				pub fun main(address: Address): [UInt64] {
 				
 				    // 1) Get a public reference to the address' public Kitty Items Collection
-				
+				    let collectionRef = getAccount(address).getCapability(KittyItems.CollectionPublicPath)
+				                            .borrow<&{NonFungibleToken.CollectionPublic}>()
+				                            ?? panic("Could not borrow capability from public collection")
 				    // 2) Return the Collection's IDs 
 				    //
 				    // Hint: there is already a function to do that
+				    return collectionRef.getIDs()
 				
+				}
+		`;
+	}
+
+	static kittyitems_read_collection_length() {
+		return fcl.script`
+				import NonFungibleToken from 0x01cf0e2f2f715450
+				import KittyItems from 0x01cf0e2f2f715450
+				
+				// This script returns the size of an account's KittyItems collection.
+				
+				pub fun main(address: Address): Int {
+				    let account = getAccount(address)
+				
+				    let collectionRef = account.getCapability(KittyItems.CollectionPublicPath)
+				                            .borrow<&{NonFungibleToken.CollectionPublic}>()
+				                            ?? panic("Could not borrow capability from public collection")
+				    
+				    return collectionRef.getIDs().length
 				}
 		`;
 	}
@@ -84,25 +108,6 @@ module.exports = class DappScripts {
 				        ?? panic("No such itemID in that collection")
 				
 				    return kittyItem.typeID
-				}
-		`;
-	}
-
-	static kittyitems_read_collection_length() {
-		return fcl.script`
-				import NonFungibleToken from 0x01cf0e2f2f715450
-				import KittyItems from 0x01cf0e2f2f715450
-				
-				// This script returns the size of an account's KittyItems collection.
-				
-				pub fun main(address: Address): Int {
-				    let account = getAccount(address)
-				
-				    let collectionRef = account.getCapability(KittyItems.CollectionPublicPath)
-				                            .borrow<&{NonFungibleToken.CollectionPublic}>()
-				                            ?? panic("Could not borrow capability from public collection")
-				    
-				    return collectionRef.getIDs().length
 				}
 		`;
 	}

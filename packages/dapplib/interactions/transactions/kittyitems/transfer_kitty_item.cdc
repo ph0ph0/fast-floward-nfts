@@ -1,5 +1,6 @@
 // TODO:
 // Add imports here, then do steps 1, 2, 3, and 4.
+import NonFungibleToken from Flow.NonFungibleToken
 import KittyItems from Project.KittyItems
 
 // This transaction transfers a Kitty Item from one account to another.
@@ -14,22 +15,21 @@ transaction(recipient: Address, withdrawID: UInt64) {
     prepare(signer: AuthAccount) {
 
         // 1) borrow a reference to the signer's Kitty Items Collection
-        let signersCollectionRef = getAccount(signer.address)
-            .getCapability(/public/kittyItemsCollection)!
-            .borrow<&KittyItems.Collection{KittyItems.KittyItemsCollectionPublic}>()
-            ?? panic("Couldn't get collection")
+        self.signerCollectionRef = signer.borrow<&KittyItems.Collection>(from: KittyItems.CollectionStoragePath)
+            ?? panic("Couldn't borrow signer reference.")
+
         // 2) borrow a public reference to the recipient's Kitty Items Collection
-        let publicCollectionRef = getAccount(recipient.address)
-            .getCapability(/public/kittyItemsCollection)!
-            .borrow<&KittyItems.Collection{KittyItems.KittyItemsCollectionPublic}>()
-            ?? panic("Couldn't get collection")
+        self.receiverCollectionRef = getAccount(recipient).getCapability(KittyItems.CollectionPublicPath).borrow<&{NonFungibleToken.CollectionPublic}>()
+            ?? panic("Couldn't borrow recipient reference.")
     }
 
     execute {
 
         // 3) withdraw the Kitty Item from the signer's Collection
-        let kittyItem <- signersCollectionRef.withdraw(withdrawID: withdrawID)
+        let nft <- self.signerCollectionRef.withdraw(withdrawID: withdrawID)
+
         // 4) deposit the Kitty Item into the recipient's Collection
-       publicCollectionRef.deposit(token: kittyItem)
+        self.receiverCollectionRef.deposit(token: <- nft)
+       
     }
 }

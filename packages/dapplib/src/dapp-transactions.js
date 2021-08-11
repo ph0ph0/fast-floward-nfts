@@ -7,33 +7,6 @@ const fcl = require("@onflow/fcl");
 
 module.exports = class DappTransactions {
 
-	static kibble_mint_tokens() {
-		return fcl.transaction`
-				import FungibleToken from 0xee82856bf20e2aa6
-				import Kibble from 0x01cf0e2f2f715450
-				
-				transaction(recipient: Address, amount: UFix64) {
-				    let tokenMinter: &Kibble.Minter
-				    let tokenReceiver: &{FungibleToken.Receiver}
-				
-				    prepare(signer: AuthAccount) {
-				        self.tokenMinter = signer.borrow<&Kibble.Minter>(from: Kibble.MinterStoragePath)
-				                                ?? panic("Signer is not the token admin")
-				
-				        self.tokenReceiver = getAccount(recipient).getCapability(Kibble.ReceiverPublicPath)
-				                                .borrow<&{FungibleToken.Receiver}>()
-				                                ?? panic("Unable to borrow receiver reference")
-				    }
-				
-				    execute {
-				        let mintedVault <- self.tokenMinter.mintTokens(amount: amount)
-				
-				        self.tokenReceiver.deposit(from: <-mintedVault)
-				    }
-				}
-		`;
-	}
-
 	static kibble_setup_account() {
 		return fcl.transaction`
 				import FungibleToken from 0xee82856bf20e2aa6
@@ -68,6 +41,33 @@ module.exports = class DappTransactions {
 				    }
 				}
 				
+		`;
+	}
+
+	static kibble_mint_tokens() {
+		return fcl.transaction`
+				import FungibleToken from 0xee82856bf20e2aa6
+				import Kibble from 0x01cf0e2f2f715450
+				
+				transaction(recipient: Address, amount: UFix64) {
+				    let tokenMinter: &Kibble.Minter
+				    let tokenReceiver: &{FungibleToken.Receiver}
+				
+				    prepare(signer: AuthAccount) {
+				        self.tokenMinter = signer.borrow<&Kibble.Minter>(from: Kibble.MinterStoragePath)
+				                                ?? panic("Signer is not the token admin")
+				
+				        self.tokenReceiver = getAccount(recipient).getCapability(Kibble.ReceiverPublicPath)
+				                                .borrow<&{FungibleToken.Receiver}>()
+				                                ?? panic("Unable to borrow receiver reference")
+				    }
+				
+				    execute {
+				        let mintedVault <- self.tokenMinter.mintTokens(amount: amount)
+				
+				        self.tokenReceiver.deposit(from: <-mintedVault)
+				    }
+				}
 		`;
 	}
 
@@ -117,6 +117,8 @@ module.exports = class DappTransactions {
 		return fcl.transaction`
 				// TODO: 
 				// Add imports here, then do steps 1, 2, and 3.
+				import NonFungibleToken from 0x01cf0e2f2f715450
+				import KittyItems from 0x01cf0e2f2f715450
 				
 				// This transction uses the NFTMinter resource to mint a new NFT.
 				//
@@ -131,17 +133,61 @@ module.exports = class DappTransactions {
 				    let receiver: &{NonFungibleToken.CollectionPublic}
 				
 				    prepare(signer: AuthAccount) {
-				
 				        // 1) borrow a reference to the NFTMinter resource in the signer's storage
+				        self.minter = signer.borrow<&KittyItems.NFTMinter>(from: KittyItems.MinterStoragePath)
+				            ?? panic("Couldn't borrow signer reference.")
 				        
 				        // 2) borrow a public reference to the recipient's Kitty Items Collection
+				        self.receiver = getAccount(recipient).getCapability<&{NonFungibleToken.CollectionPublic}>(KittyItems.CollectionPublicPath).borrow()
+				            ?? panic("Couldn't borrow recipient reference.")
 				        
 				    }
 				
 				    execute {
 				
 				        // 3) mint the NFT and deposit it into the recipient's Collection
+				        self.minter.mintNFT(recipient: self.receiver, typeID: typeID)
 				        
+				    }
+				}
+		`;
+	}
+
+	static kittyitems_transfer_kitty_item() {
+		return fcl.transaction`
+				// TODO:
+				// Add imports here, then do steps 1, 2, 3, and 4.
+				import NonFungibleToken from 0x01cf0e2f2f715450
+				import KittyItems from 0x01cf0e2f2f715450
+				
+				// This transaction transfers a Kitty Item from one account to another.
+				
+				transaction(recipient: Address, withdrawID: UInt64) {
+				    // local variable for a reference to the signer's Kitty Items Collection
+				    let signerCollectionRef: &KittyItems.Collection
+				
+				    // local variable for a reference to the receiver's Kitty Items Collection
+				    let receiverCollectionRef: &{NonFungibleToken.CollectionPublic}
+				
+				    prepare(signer: AuthAccount) {
+				
+				        // 1) borrow a reference to the signer's Kitty Items Collection
+				        self.signerCollectionRef = signer.borrow<&KittyItems.Collection>(from: KittyItems.CollectionStoragePath)
+				            ?? panic("Couldn't borrow signer reference.")
+				
+				        // 2) borrow a public reference to the recipient's Kitty Items Collection
+				        self.receiverCollectionRef = getAccount(recipient).getCapability(KittyItems.CollectionPublicPath).borrow<&{NonFungibleToken.CollectionPublic}>()
+				            ?? panic("Couldn't borrow recipient reference.")
+				    }
+				
+				    execute {
+				
+				        // 3) withdraw the Kitty Item from the signer's Collection
+				        let nft <- self.signerCollectionRef.withdraw(withdrawID: withdrawID)
+				
+				        // 4) deposit the Kitty Item into the recipient's Collection
+				        self.receiverCollectionRef.deposit(token: <- nft)
+				       
 				    }
 				}
 		`;
@@ -168,39 +214,6 @@ module.exports = class DappTransactions {
 				            // create a public capability for the collection
 				            signer.link<&KittyItems.Collection{NonFungibleToken.CollectionPublic, KittyItems.KittyItemsCollectionPublic}>(KittyItems.CollectionPublicPath, target: KittyItems.CollectionStoragePath)
 				        }
-				    }
-				}
-		`;
-	}
-
-	static kittyitems_transfer_kitty_item() {
-		return fcl.transaction`
-				// TODO:
-				// Add imports here, then do steps 1, 2, 3, and 4.
-				
-				// This transaction transfers a Kitty Item from one account to another.
-				
-				transaction(recipient: Address, withdrawID: UInt64) {
-				    // local variable for a reference to the signer's Kitty Items Collection
-				    let signerCollectionRef: &KittyItems.Collection
-				
-				    // local variable for a reference to the receiver's Kitty Items Collection
-				    let receiverCollectionRef: &{NonFungibleToken.CollectionPublic}
-				
-				    prepare(signer: AuthAccount) {
-				
-				        // 1) borrow a reference to the signer's Kitty Items Collection
-				
-				        // 2) borrow a public reference to the recipient's Kitty Items Collection
-				
-				    }
-				
-				    execute {
-				
-				        // 3) withdraw the Kitty Item from the signer's Collection
-				
-				        // 4) deposit the Kitty Item into the recipient's Collection
-				       
 				    }
 				}
 		`;
@@ -285,34 +298,6 @@ module.exports = class DappTransactions {
 		`;
 	}
 
-	static kittyitemsmarket_remove_market_item() {
-		return fcl.transaction`
-				import KittyItemsMarket from 0x01cf0e2f2f715450
-				
-				// This transaction allows a SaleCollection owner to remove a Kitty Item
-				// from sale
-				
-				transaction(itemID: UInt64) {
-				
-				  let saleCollection: &KittyItemsMarket.SaleCollection
-				
-				  prepare(signer: AuthAccount) {
-				      // Borrows the signer's SaleCollection
-				      self.saleCollection = signer.borrow<&KittyItemsMarket.SaleCollection>(from: KittyItemsMarket.MarketStoragePath) 
-				          ?? panic("Could not borrow the signer's SaleCollection")
-				  }
-				
-				  execute {
-				      // Unlist Kitty Items from sale
-				      self.saleCollection.unlistSale(itemID: itemID)
-				
-				      log("Unlisted Kitty Item for sale")
-				  }
-				}
-				
-		`;
-	}
-
 	static kittyitemsmarket_setup_account() {
 		return fcl.transaction`
 				import KittyItemsMarket from 0x01cf0e2f2f715450
@@ -361,6 +346,34 @@ module.exports = class DappTransactions {
 				    }
 				  }
 				}
+		`;
+	}
+
+	static kittyitemsmarket_remove_market_item() {
+		return fcl.transaction`
+				import KittyItemsMarket from 0x01cf0e2f2f715450
+				
+				// This transaction allows a SaleCollection owner to remove a Kitty Item
+				// from sale
+				
+				transaction(itemID: UInt64) {
+				
+				  let saleCollection: &KittyItemsMarket.SaleCollection
+				
+				  prepare(signer: AuthAccount) {
+				      // Borrows the signer's SaleCollection
+				      self.saleCollection = signer.borrow<&KittyItemsMarket.SaleCollection>(from: KittyItemsMarket.MarketStoragePath) 
+				          ?? panic("Could not borrow the signer's SaleCollection")
+				  }
+				
+				  execute {
+				      // Unlist Kitty Items from sale
+				      self.saleCollection.unlistSale(itemID: itemID)
+				
+				      log("Unlisted Kitty Item for sale")
+				  }
+				}
+				
 		`;
 	}
 

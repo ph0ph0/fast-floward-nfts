@@ -1,5 +1,6 @@
 // TODO:
 // Add imports here, then do steps 1 and 2.
+import NonFungibleToken from Flow.NonFungibleToken
 import KittyItems from Project.KittyItems
 
 // This script returns an array of all the NFT IDs in an account's Kitty Items Collection.
@@ -7,12 +8,12 @@ import KittyItems from Project.KittyItems
 pub fun main(address: Address): [UInt64] {
 
     // 1) Get a public reference to the address' public Kitty Items Collection
-    let publicRef = getAccount(address)
-        .getCapability(/public/KittyItemsCollection)!
-        .borrow<&KittyItems.Collection{KittyItems.KittyItemsCollectionPublic}>()
-            ?? panic("Couldn't get collection")
+    let collectionRef = getAccount(address).getCapability(KittyItems.CollectionPublicPath)
+                            .borrow<&{NonFungibleToken.CollectionPublic}>()
+                            ?? panic("Could not borrow capability from public collection")
     // 2) Return the Collection's IDs 
-    return publicRef.getIDs()
+    //
     // Hint: there is already a function to do that
+    return collectionRef.getIDs()
 
 }
