@@ -7,6 +7,33 @@ const fcl = require("@onflow/fcl");
 
 module.exports = class DappTransactions {
 
+	static kibble_mint_tokens() {
+		return fcl.transaction`
+				import FungibleToken from 0xee82856bf20e2aa6
+				import Kibble from 0x01cf0e2f2f715450
+				
+				transaction(recipient: Address, amount: UFix64) {
+				    let tokenMinter: &Kibble.Minter
+				    let tokenReceiver: &{FungibleToken.Receiver}
+				
+				    prepare(signer: AuthAccount) {
+				        self.tokenMinter = signer.borrow<&Kibble.Minter>(from: Kibble.MinterStoragePath)
+				                                ?? panic("Signer is not the token admin")
+				
+				        self.tokenReceiver = getAccount(recipient).getCapability(Kibble.ReceiverPublicPath)
+				                                .borrow<&{FungibleToken.Receiver}>()
+				                                ?? panic("Unable to borrow receiver reference")
+				    }
+				
+				    execute {
+				        let mintedVault <- self.tokenMinter.mintTokens(amount: amount)
+				
+				        self.tokenReceiver.deposit(from: <-mintedVault)
+				    }
+				}
+		`;
+	}
+
 	static kibble_setup_account() {
 		return fcl.transaction`
 				import FungibleToken from 0xee82856bf20e2aa6
@@ -41,33 +68,6 @@ module.exports = class DappTransactions {
 				    }
 				}
 				
-		`;
-	}
-
-	static kibble_mint_tokens() {
-		return fcl.transaction`
-				import FungibleToken from 0xee82856bf20e2aa6
-				import Kibble from 0x01cf0e2f2f715450
-				
-				transaction(recipient: Address, amount: UFix64) {
-				    let tokenMinter: &Kibble.Minter
-				    let tokenReceiver: &{FungibleToken.Receiver}
-				
-				    prepare(signer: AuthAccount) {
-				        self.tokenMinter = signer.borrow<&Kibble.Minter>(from: Kibble.MinterStoragePath)
-				                                ?? panic("Signer is not the token admin")
-				
-				        self.tokenReceiver = getAccount(recipient).getCapability(Kibble.ReceiverPublicPath)
-				                                .borrow<&{FungibleToken.Receiver}>()
-				                                ?? panic("Unable to borrow receiver reference")
-				    }
-				
-				    execute {
-				        let mintedVault <- self.tokenMinter.mintTokens(amount: amount)
-				
-				        self.tokenReceiver.deposit(from: <-mintedVault)
-				    }
-				}
 		`;
 	}
 
@@ -270,28 +270,28 @@ module.exports = class DappTransactions {
 		`;
 	}
 
-	static kittyitemsmarket_sell_market_item() {
+	static kittyitemsmarket_remove_market_item() {
 		return fcl.transaction`
 				import KittyItemsMarket from 0x01cf0e2f2f715450
 				
-				// This transaction allows the signer to list a Kitty Item for sale
-				// from their Kitty Items Collection
+				// This transaction allows a SaleCollection owner to remove a Kitty Item
+				// from sale
 				
-				transaction(itemID: UInt64, price: UFix64) {
+				transaction(itemID: UInt64) {
 				
 				  let saleCollection: &KittyItemsMarket.SaleCollection
 				
 				  prepare(signer: AuthAccount) {
 				      // Borrows the signer's SaleCollection
 				      self.saleCollection = signer.borrow<&KittyItemsMarket.SaleCollection>(from: KittyItemsMarket.MarketStoragePath) 
-				          ?? panic("Could not borrow the SaleCollection")
+				          ?? panic("Could not borrow the signer's SaleCollection")
 				  }
 				
 				  execute {
-				      // Lists Packs for sale
-				      self.saleCollection.listForSale(itemID: itemID, price: price)
+				      // Unlist Kitty Items from sale
+				      self.saleCollection.unlistSale(itemID: itemID)
 				
-				      log("Listed Kitty Items for sale")
+				      log("Unlisted Kitty Item for sale")
 				  }
 				}
 				
@@ -349,28 +349,28 @@ module.exports = class DappTransactions {
 		`;
 	}
 
-	static kittyitemsmarket_remove_market_item() {
+	static kittyitemsmarket_sell_market_item() {
 		return fcl.transaction`
 				import KittyItemsMarket from 0x01cf0e2f2f715450
 				
-				// This transaction allows a SaleCollection owner to remove a Kitty Item
-				// from sale
+				// This transaction allows the signer to list a Kitty Item for sale
+				// from their Kitty Items Collection
 				
-				transaction(itemID: UInt64) {
+				transaction(itemID: UInt64, price: UFix64) {
 				
 				  let saleCollection: &KittyItemsMarket.SaleCollection
 				
 				  prepare(signer: AuthAccount) {
 				      // Borrows the signer's SaleCollection
 				      self.saleCollection = signer.borrow<&KittyItemsMarket.SaleCollection>(from: KittyItemsMarket.MarketStoragePath) 
-				          ?? panic("Could not borrow the signer's SaleCollection")
+				          ?? panic("Could not borrow the SaleCollection")
 				  }
 				
 				  execute {
-				      // Unlist Kitty Items from sale
-				      self.saleCollection.unlistSale(itemID: itemID)
+				      // Lists Packs for sale
+				      self.saleCollection.listForSale(itemID: itemID, price: price)
 				
-				      log("Unlisted Kitty Item for sale")
+				      log("Listed Kitty Items for sale")
 				  }
 				}
 				

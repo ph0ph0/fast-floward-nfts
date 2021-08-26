@@ -68,25 +68,6 @@ module.exports = class DappScripts {
 		`;
 	}
 
-	static kittyitems_read_collection_length() {
-		return fcl.script`
-				import NonFungibleToken from 0x01cf0e2f2f715450
-				import KittyItems from 0x01cf0e2f2f715450
-				
-				// This script returns the size of an account's KittyItems collection.
-				
-				pub fun main(address: Address): Int {
-				    let account = getAccount(address)
-				
-				    let collectionRef = account.getCapability(KittyItems.CollectionPublicPath)
-				                            .borrow<&{NonFungibleToken.CollectionPublic}>()
-				                            ?? panic("Could not borrow capability from public collection")
-				    
-				    return collectionRef.getIDs().length
-				}
-		`;
-	}
-
 	static kittyitems_read_kitty_item_type_id() {
 		return fcl.script`
 				import NonFungibleToken from 0x01cf0e2f2f715450
@@ -120,6 +101,25 @@ module.exports = class DappScripts {
 				
 				pub fun main(): UInt64 {    
 				    return KittyItems.totalSupply
+				}
+		`;
+	}
+
+	static kittyitems_read_collection_length() {
+		return fcl.script`
+				import NonFungibleToken from 0x01cf0e2f2f715450
+				import KittyItems from 0x01cf0e2f2f715450
+				
+				// This script returns the size of an account's KittyItems collection.
+				
+				pub fun main(address: Address): Int {
+				    let account = getAccount(address)
+				
+				    let collectionRef = account.getCapability(KittyItems.CollectionPublicPath)
+				                            .borrow<&{NonFungibleToken.CollectionPublic}>()
+				                            ?? panic("Could not borrow capability from public collection")
+				    
+				    return collectionRef.getIDs().length
 				}
 		`;
 	}

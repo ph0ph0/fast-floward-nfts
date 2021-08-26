@@ -9,7 +9,7 @@ import "../components/switch-widget.js";
 import DappLib from "@decentology/dappstarter-dapplib";
 import { LitElement, html, customElement, property } from "lit-element";
 
-@customElement('fast-floward-harness')
+@customElement("fast-floward-harness")
 export default class FastFlowardHarness extends LitElement {
   @property()
   title;
@@ -128,7 +128,12 @@ export default class FastFlowardHarness extends LitElement {
         <!-- TODO: Implement this action card -->
         <!-- NOTE: This is a transaction -->
         <action-card title="DAY 4: Kitty Items Market - Sell Market Item">
-      
+          description="Sell a Kitty Item from the Marketplace" action="kittyItemsMarketSellMarketItem" method="post"
+          fields="signer itemID price">
+          <account-widget field="signer" label="Signer">
+          </account-widget>
+          <text-widget field="itemID" label="Item ID" placeholder="0"></text-widget>
+          <text-widget field="price" label="Price" placeholder="0"></text-widget>
         </action-card>
       
         <action-card title="DAY 4: Kitty Items Market - Remove Market Item"
@@ -142,13 +147,21 @@ export default class FastFlowardHarness extends LitElement {
         <!-- TODO: Implement this action card -->
         <!-- NOTE: This is a transaction -->
         <action-card title="DAY 4: Kitty Items Market - Buy Market Item">
-      
+          description="Buy a Kitty Item from the Marketplace" action="kittyItemsMarketBuyMarketItem" method="post"
+          fields="signer itemID marketCollectionAddress">
+          <account-widget field="signer" label="Signer">
+          </account-widget>
+          <text-widget field="itemID" label="Item ID" placeholder="0"></text-widget>
+          <account-widget field="marketCollectionAddress" label="Market Collection Address">
         </action-card>
       
         <!-- TODO: Implement this action card -->
         <!-- NOTE: This is a script -->
         <action-card title="DAY 4: Kitty Items Market - Read Sale Collection IDs">
-      
+          description="Read the Sale Collection IDs of this address" action="kittyItemsMarketReadSaleCollectionLength"
+          method="get" fields="marketCollectionAddress">
+          <account-widget field="marketCollectionAddress" label="Market Collection Address">
+          </account-widget>
         </action-card>
       
         <action-card title="DAY 4: Kitty Items Market - Read Sale Collection Length"
